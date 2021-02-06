@@ -21,6 +21,9 @@ import (
 	"github.com/goji/httpauth"
 	"github.com/gorilla/handlers"
 	_ "github.com/shurcooL/vfsgen"
+	"github.com/yanjiemao/gofileserver/pkg/server"
+
+	"github.com/yanjiemao/gofileserver/pkg/util"
 )
 
 type Configure struct {
@@ -176,12 +179,12 @@ func main() {
 			user, pass := userpass[0], userpass[1]
 			hdlr = httpauth.SimpleBasicAuth(user, pass)(hdlr)
 		}
-	case "openid":
-		handleOpenID(gcfg.Auth.OpenID, false) // FIXME(ssx): set secure default to false
-		// case "github":
-		// 	handleOAuth2ID(gcfg.Auth.Type, gcfg.Auth.ID, gcfg.Auth.Secret) // FIXME(ssx): set secure default to false
-	case "oauth2-proxy":
-		handleOauth2()
+		// case "openid":
+		// 	handleOpenID(gcfg.Auth.OpenID, false) // FIXME(ssx): set secure default to false
+		// 	// case "github":
+		// 	// 	handleOAuth2ID(gcfg.Auth.Type, gcfg.Auth.ID, gcfg.Auth.Secret) // FIXME(ssx): set secure default to false
+		// case "oauth2-proxy":
+		// 	handleOauth2()
 	}
 
 	// CORS
@@ -209,7 +212,7 @@ func main() {
 		gcfg.Addr = ":" + gcfg.Addr
 	}
 	_, port, _ := net.SplitHostPort(gcfg.Addr)
-	log.Printf("listening on %s, local address http://%s:%s\n", strconv.Quote(gcfg.Addr), getLocalIP(), port)
+	log.Printf("listening on %s, local address http://%s:%s\n", strconv.Quote(gcfg.Addr), util.GetLocalIP(), port)
 
 	var err error
 	if gcfg.Key != "" && gcfg.Cert != "" {

@@ -23,7 +23,7 @@ import (
 // 	return ""
 // }
 
-func getRealIP(req *http.Request) string {
+func GetRealIP(req *http.Request) string {
 	xip := req.Header.Get("X-Real-IP")
 	if xip == "" {
 		xip = strings.Split(req.RemoteAddr, ":")[0]
@@ -57,7 +57,7 @@ func SublimeContains(s, substr string) bool {
 }
 
 // getLocalIP returns the non loopback local IP of the host
-func getLocalIP() string {
+func GetLocalIP() string {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		return ""
@@ -73,7 +73,7 @@ func getLocalIP() string {
 	return ""
 }
 
-func fileExists(path string) bool {
+func FileExists(path string) bool {
 	info, err := os.Stat(path)
 	if err != nil {
 		return false

@@ -20,9 +20,9 @@ import (
 
 	"regexp"
 
-	"github.com/yanjiemao/gofileserver/util"
+	config "github.com/yanjiemao/gofileserver/pkg/config/yaml"
+	"github.com/yanjiemao/gofileserver/pkg/util"
 
-	"github.com/coreos/etcd/store"
 	"github.com/go-yaml/yaml"
 	"github.com/gorilla/mux"
 	"github.com/shogo82148/androidbinary/apk"
@@ -236,7 +236,7 @@ func (s *HTTPStaticServer) hUploadOrMkdir(w http.ResponseWriter, req *http.Reque
 	// Large file (>32MB) will store in tmp directory
 	// The quickest operation is call os.Move instead of os.Copy
 	var copyErr error
-	if osFile, ok := file.(*os.File); ok && fileExists(osFile.Name()) {
+	if osFile, ok := file.(*os.File); ok && util.FileExists(osFile.Name()) {
 		tmpUploadPath := osFile.Name()
 		osFile.Close() // Windows can not rename opened file
 		log.Printf("Move %s -> %s", tmpUploadPath, dstPath)
@@ -388,7 +388,7 @@ func (s *HTTPStaticServer) hPlist(w http.ResponseWriter, r *http.Request) {
 		Scheme: scheme,
 		Host:   r.Host,
 	}
-	data, err := generateDownloadPlist(baseURL, path, plinfo)
+	data, err := util.GenerateDownloadPlist(baseURL, path, plinfo)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -428,7 +428,7 @@ func (s *HTTPStaticServer) genPlistLink(httpPlistLink string) (plistUrl string, 
 	// Maybe need a proxy, a little slowly now.
 	pp := s.PlistProxy
 	if pp == "" {
-		pp = defaultPlistProxy
+		pp = config.DefaultPlistProxy
 	}
 	resp, err := http.Get(httpPlistLink)
 	if err != nil {
@@ -506,7 +506,7 @@ func (c *AccessConf) canAccess(fileName string) bool {
 }
 
 func (c *AccessConf) canDelete(r *http.Request) bool {
-	session, err := store.Get(r, defaultSessionName)
+	session, err := util.Store.Get(r, util.DefaultSessionName)
 	if err != nil {
 		return c.Delete
 	}
@@ -514,7 +514,7 @@ func (c *AccessConf) canDelete(r *http.Request) bool {
 	if val == nil {
 		return c.Delete
 	}
-	userInfo := val.(*UserInfo)
+	userInfo := val.(*util.UserInfo)
 	for _, rule := range c.Users {
 		if rule.Email == userInfo.Email {
 			return rule.Delete
@@ -537,7 +537,7 @@ func (c *AccessConf) canUpload(r *http.Request) bool {
 	if token != "" {
 		return c.canUploadByToken(token)
 	}
-	session, err := store.Get(r, defaultSessionName)
+	session, err := util.Store.Get(r, util.DefaultSessionName)
 	if err != nil {
 		return c.Upload
 	}
@@ -545,7 +545,7 @@ func (c *AccessConf) canUpload(r *http.Request) bool {
 	if val == nil {
 		return c.Upload
 	}
-	userInfo := val.(*UserInfo)
+	userInfo := val.(*util.UserInfo)
 
 	for _, rule := range c.Users {
 		if rule.Email == userInfo.Email {
@@ -753,7 +753,7 @@ func isDir(path string) bool {
 }
 
 func assetsContent(name string) string {
-	fd, err := Assets.Open(name)
+	fd, err := config.Assets.Open(name)
 	if err != nil {
 		panic(err)
 	}
@@ -773,7 +773,7 @@ func init() {
 	funcMap = template.FuncMap{
 		"title": strings.Title,
 		"urlhash": func(path string) string {
-			httpFile, err := Assets.Open(path)
+			httpFile, err := config.Assets.Open(path)
 			if err != nil {
 				return path + "#no-such-file"
 			}
@@ -801,7 +801,7 @@ func executeTemplate(w http.ResponseWriter, name string, v interface{}) {
 }
 
 func renderHTML(w http.ResponseWriter, name string, v interface{}) {
-	if _, ok := Assets.(http.Dir); ok {
+	if _, ok := config.Assets.(http.Dir); ok {
 		log.Println("Hot load", name)
 		t := template.Must(template.New(name).Funcs(funcMap).Delims("[[", "]]").Parse(assetsContent(name)))
 		t.Execute(w, v)
