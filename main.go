@@ -21,6 +21,7 @@ import (
 	"github.com/goji/httpauth"
 	"github.com/gorilla/handlers"
 	_ "github.com/shurcooL/vfsgen"
+	config "github.com/yanjiemao/gofileserver/pkg/config/yaml"
 	"github.com/yanjiemao/gofileserver/pkg/server"
 
 	"github.com/yanjiemao/gofileserver/pkg/util"
@@ -196,7 +197,7 @@ func main() {
 	}
 
 	http.Handle("/", hdlr)
-	http.Handle("/-/assets/", http.StripPrefix("/-/assets/", http.FileServer(Assets)))
+	http.Handle("/-/assets/", http.StripPrefix("/-/assets/", http.FileServer(config.Assets)))
 	http.HandleFunc("/-/sysinfo", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		data, _ := json.Marshal(map[string]interface{}{
